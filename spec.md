@@ -51,21 +51,25 @@ E. Interface:
    4. Visual indicators showing whose turn it is on each board.
    5. Four visible chess clocks
 
-
-
+F. Backend: (important)
+   The game should support four players playing simultaneously from separate browsers.
+   The backend should maintain the shared game state, including both chessboards, captured-piece reserves, player turns, and chess clocks.
+   The backend should communicate with all four players to synchronize moves, piece transfers, and game-ending events in real time.
+   (The backend does not need to store previously played games, it just restart after the game ends)
 
 
 
 
 Acceptance criteria:
 1. Two Boards: Two 8×8 chessboards are displayed with standard starting positions.
-2. Four players can play in two teams, with one White and one Black player per team.
+2. Four players can play in two teams, with one White and one Black player per team. Multiplayer Synchronization: Four players can connect to the same game session from separate browsers. Moves, captures, piece placements, and game-ending events are synchronized across all four players.
 3. Piece Movement: Players can select and move chess pieces according to the rules
 4. Capturing and piece transfer should work
 5. Piece placement: Players can select an available reserve piece and place it onto a legal
    empty square instead of making a normal move. 
 6. Checkmate and check validation should work
 7. Chess clock should work
+
 
 
 
