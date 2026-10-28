@@ -60,7 +60,7 @@ E. Interface:
 Acceptance criteria:
 1. Two Boards: Two 8×8 chessboards are displayed with standard starting positions.
 2. Four players can play in two teams, with one White and one Black player per team.
-3. Piece Movement: Players can select and move chess pieces correctly
+3. Piece Movement: Players can select and move chess pieces according to the rules
 4. Capturing and piece transfer should work
 5. Piece placement: Players can select an available reserve piece and place it onto a legal
    empty square instead of making a normal move. 
