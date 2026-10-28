@@ -1,0 +1,53 @@
+name: Deploy frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Configure backend URL
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          url = os.environ.get('BACKEND_URL', '').strip().rstrip('/')
+          parsed = urlsplit(url)
+          if (parsed.scheme != 'https' or not parsed.netloc or parsed.path
+                  or parsed.query or parsed.fragment or parsed.username or parsed.password):
+              raise SystemExit('Set the BACKEND_URL repository variable to your Render HTTPS origin, without a path.')
+          Path('frontend/config.js').write_text(
+              'window.BUGHOUSE_CONFIG = ' + json.dumps({'backendUrl': url}) + ';\n',
+              encoding='utf-8')
+          PY
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: frontend
+      - name: Deploy frontend
+        id: deployment
+        uses: actions/deploy-pages@v4

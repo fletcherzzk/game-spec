@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: bughouse-backend
+    runtime: python
+    rootDir: backend
+    numInstances: 1
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 100 --timeout 120 app:app
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_ORIGINS
+        sync: false
