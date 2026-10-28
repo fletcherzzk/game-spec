@@ -7,6 +7,7 @@ SEATS = ("a_white", "a_black", "b_white", "b_black")
 TEAMS = {"a_white": 1, "b_black": 1, "a_black": 2, "b_white": 2}
 INITIAL_SECONDS = 180.0
 INCREMENT = 2.0
+MODES = (1, 2, 4)
 
 
 def starting_board():
@@ -18,6 +19,7 @@ class Game:
     def __init__(self, now=time.monotonic):
         self.now = now
         self.players = {}
+        self.mode = 4
         self.rematch_votes = set()
         self.reset()
 
@@ -27,13 +29,14 @@ class Game:
         self.remaining = {seat: INITIAL_SECONDS for seat in SEATS}
         self.status = "waiting"
         self.result = None
+        self.clocks_paused = False
         self.updated_at = self.now()
         self.rematch_votes.clear()
 
     def advance(self):
         now = self.now()
         elapsed = max(0, now - self.updated_at)
-        if self.status == "playing":
+        if self.status == "playing" and not self.clocks_paused:
             active = [f"{board}_{data['turn']}" for board, data in self.boards.items()]
             expired = [seat for seat in active if self.remaining[seat] <= elapsed]
             # Stop both boards at the first actual flag, even if the worker woke late.
@@ -51,7 +54,18 @@ class Game:
     def seat_for_sid(self, sid):
         return next((s for s, p in self.players.items() if p["sid"] == sid), None)
 
-    def join(self, sid, token=None, name="Player", requested=None):
+    def seats_for_sid(self, sid):
+        return [s for s, p in self.players.items() if p["sid"] == sid]
+
+    @staticmethod
+    def groups(mode):
+        if mode == 1:
+            return [SEATS]
+        if mode == 2:
+            return [tuple(s for s in SEATS if TEAMS[s] == team) for team in (1, 2)]
+        return [(seat,) for seat in SEATS]
+
+    def join(self, sid, token=None, name="Player", requested=None, mode=None):
         self.advance()
         existing = next((s for s, p in self.players.items()
                          if token and secrets.compare_digest(p["token"], token)), None)
@@ -65,20 +79,31 @@ class Game:
             raise ValueError("You already have a seat.")
         if self.status != "waiting":
             raise ValueError("The match has started. You can watch or reconnect to your seat.")
-        seat = requested or next((s for s in SEATS if s not in self.players), None)
-        if seat not in SEATS or seat in self.players:
+        if mode is not None and (type(mode) is not int or mode not in MODES):
+            raise ValueError("Choose 1-Player, 2-Player, or 4-Player mode.")
+        chosen_mode = self.mode if mode is None else mode
+        if self.players and chosen_mode != self.mode:
+            raise ValueError("The mode is locked once a player joins.")
+        groups = self.groups(chosen_mode)
+        group = next((g for g in groups if requested in g), None) if requested else next(
+            (g for g in groups if not any(s in self.players for s in g)), None)
+        if group is None or any(s in self.players for s in group):
             raise ValueError("That seat is unavailable.")
+        self.mode = chosen_mode
         token = secrets.token_hex(32)
-        self.players[seat] = {"name": name.strip()[:24] or "Player", "token": token, "sid": sid}
+        # One controller object owns every side in a group, including its reconnect token.
+        player = {"name": name.strip()[:24] or "Player", "token": token, "sid": sid}
+        for seat in group:
+            self.players[seat] = player
         if len(self.players) == 4 and all(p["sid"] for p in self.players.values()):
             self.status = "playing"
             self.updated_at = self.now()
-        return seat, token
+        return group[0], token
 
     def disconnect(self, sid):
         self.advance()
-        seat = self.seat_for_sid(sid)
-        if seat:
+        seats = self.seats_for_sid(sid)
+        for seat in seats:
             if self.status == "waiting":
                 del self.players[seat]
             else:
@@ -89,8 +114,10 @@ class Game:
         self.advance()
         if self.status != "playing":
             raise ValueError("The match is not running.")
-        seat = self.seat_for_sid(sid)
-        if board not in self.boards or seat != f"{board}_{self.boards[board]['turn']}":
+        if board not in self.boards:
+            raise ValueError("Invalid board.")
+        seat = f"{board}_{self.boards[board]['turn']}"
+        if seat not in self.seats_for_sid(sid):
             raise ValueError("You can only move on your board during your turn.")
         if not all(isinstance(s, str) and len(s) == 2 and s[0] in "abcdefgh"
                    and s[1] in "12345678" for s in (origin, target)):
@@ -121,13 +148,26 @@ class Game:
         if self.status != "finished" or seat is None:
             raise ValueError("Only seated players can request a rematch after the match ends.")
         self.rematch_votes.add(seat)
-        if len(self.rematch_votes) == 4 and all(p["sid"] for p in self.players.values()):
+        if len(self.rematch_votes) == self.mode and all(p["sid"] for p in self.players.values()):
             self.reset()
             self.status = "playing"
 
+    def set_clock_paused(self, sid, paused):
+        self.advance()
+        if self.mode != 1 or not self.seats_for_sid(sid):
+            raise ValueError("Only the 1-Player controller can pause or resume clocks.")
+        if self.status != "playing":
+            raise ValueError("Clocks can only be paused during a running match.")
+        if type(paused) is not bool:
+            raise ValueError("paused must be a boolean.")
+        self.clocks_paused = paused
+
     def snapshot(self):
         self.advance()
-        return {"status": self.status, "boards": self.boards,
+        return {"status": self.status, "boards": self.boards, "mode": self.mode,
+                "required_players": self.mode,
+                "player_count": len({p["token"] for p in self.players.values()}),
+                "clocks_paused": self.clocks_paused,
                 "clocks": {s: math.ceil(t * 1000) for s, t in self.remaining.items()},
                 "players": {s: {"name": p["name"], "connected": p["sid"] is not None,
                                  "team": TEAMS[s]} for s, p in self.players.items()},

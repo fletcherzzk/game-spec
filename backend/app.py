@@ -81,8 +81,8 @@ def join(payload):
         return {"ok": False, "error": "Invalid join request."}
 
     def action():
-        assigned, credential = game.join(request.sid, token, name, seat)
-        return {"seat": assigned, "token": credential}
+        assigned, credential = game.join(request.sid, token, name, seat, payload.get("mode"))
+        return {"seat": assigned, "seats": game.seats_for_sid(request.sid), "token": credential}
     return handle(action)
 
 
@@ -96,6 +96,13 @@ def move(payload):
 @socketio.on("rematch")
 def rematch():
     return handle(lambda: game.rematch(request.sid))
+
+
+@socketio.on("set_clock_paused")
+def set_clock_paused(payload):
+    if not isinstance(payload, dict) or type(payload.get("paused")) is not bool:
+        return {"ok": False, "error": "paused must be a boolean."}
+    return handle(lambda: game.set_clock_paused(request.sid, payload["paused"]))
 
 
 @socketio.on("disconnect")

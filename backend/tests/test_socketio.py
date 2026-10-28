@@ -79,6 +79,34 @@ class MultiplayerTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 server.allowed_origins(value)
 
+    def test_solo_assignments_and_pause_are_broadcast_to_spectators(self):
+        reply = self.clients[0].emit('join', {'mode': 1}, callback=True)
+        self.assertTrue(reply['ok'])
+        self.assertEqual(set(reply['seats']), set(SEATS))
+        self.time += 5
+        reply = self.clients[0].emit('set_clock_paused', {'paused': True}, callback=True)
+        self.assertTrue(reply['ok'])
+        self.time += 500
+        self.assertTrue(self.clients[0].emit('move', {'board': 'b', 'from': 'd2', 'to': 'd4'}, callback=True)['ok'])
+        for client in self.clients:
+            state = self.latest(client)
+            self.assertEqual(state['mode'], 1)
+            self.assertEqual(state['player_count'], 1)
+            self.assertTrue(state['clocks_paused'])
+            self.assertEqual(state['clocks']['b_white'], 177000)
+        self.assertFalse(self.clients[1].emit('set_clock_paused', {'paused': False}, callback=True)['ok'])
+        for payload in (None, {}, {'paused': 'true'}, {'paused': 1}):
+            self.assertFalse(self.clients[0].emit('set_clock_paused', payload, callback=True)['ok'])
+
+    def test_two_player_team_assignment_and_pause_rejected(self):
+        first = self.clients[0].emit('join', {'mode': 2, 'seat': 'a_white'}, callback=True)
+        second = self.clients[1].emit('join', {'mode': 2, 'seat': 'a_black'}, callback=True)
+        self.assertEqual(set(first['seats']), {'a_white', 'b_black'})
+        self.assertEqual(set(second['seats']), {'a_black', 'b_white'})
+        self.assertFalse(self.clients[0].emit('set_clock_paused', {'paused': True}, callback=True)['ok'])
+        self.assertFalse(self.clients[0].emit('move', {'board': 'b', 'from': 'e2', 'to': 'e4'}, callback=True)['ok'])
+        self.assertTrue(self.clients[1].emit('move', {'board': 'b', 'from': 'e2', 'to': 'e4'}, callback=True)['ok'])
+
 
 if __name__ == "__main__":
     unittest.main()

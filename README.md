@@ -1,8 +1,23 @@
 # Bughouse Chess - Phase 1
 
-Four players, two boards, pawn-only moves, independent turns, and authoritative
-3+2 clocks. The static frontend runs on GitHub Pages; the Flask-SocketIO backend
-runs independently on Render. Flask does not serve frontend files.
+What is achieved so far:
+One, two, or four players, two boards, pawn-only moves, independent turns, and authoritative 3+2 clocks. 
+The static frontend and the Flask-SocketIO backend.Solo testing mode.
+Controls all four sides and supports pausing clocks; two-player mode assigns one team per player.
 
-See **[doc.md](doc.md)** for local setup, deployment, configuration, game rules,
-architecture, tests, and troubleshooting.
+
+
+Note: I have got an AI written Readme: See doc.md 
+
+
+
+Current Tech stack:
+Frontend : HTML, CSS, JavaScript
+           Frontend Hosting: GitHub Pages
+
+Backend: Python, Flask, Flask-SocketIO
+         Backend Hosting: Render.com
+
+Note: Flask does not serve frontend files,
+      The frontend and backend is completely separated
+      (be remindful of this in testing)

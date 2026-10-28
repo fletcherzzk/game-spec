@@ -2,14 +2,32 @@
 
 ## Features
 
-Four players join one shared match from separate browsers. Two boards show standard
+One, two, or four players join one shared match from separate browsers. Two boards show standard
 starting positions with all pieces and coordinate labels. Team 1 is A White + B Black;
-Team 2 is A Black + B White. Both boards start when all four seats are connected.
+Team 2 is A Black + B White. Both boards start when all controllers required by the selected mode are connected.
+
+| Mode | Players | Control |
+| --- | --- | --- |
+| 1-Player (testing only) | 1 | All four sides on both boards |
+| 2-Player | 2 | One team per player: A White + B Black, or A Black + B White |
+| 4-Player (standard) | 4 | One side on one board per player |
+
+Choose a mode in the lobby before joining. The first successful join locks the
+mode for everyone. All modes use the same backend move rules, independent board
+turns, increments, and timeout logic. Required rematch votes match the number of
+controllers: one, two, or four. A rematch keeps the current mode; restart the backend
+to return to a fresh lobby and choose a different mode.
+
+In **1-Player testing mode**, the controller can use **Pause clocks** / **Resume clocks**.
+Pause freezes all four countdowns on the server; legal moves and normal two-second
+increments still work. Resuming charges only time after resumption. Clocks start
+running initially, and a rematch resumes them. Spectators and players in other modes
+cannot pause clocks. A timeout that has already occurred cannot be undone by pausing.
 
 Pawns can move one square forward, or two from their starting rank if the path is
 empty. Each board tracks turns independently. All players start with three minutes
 and receive two seconds after each valid move. A timeout ends the entire match;
-exactly simultaneous opposing flags draw. Four rematch votes reset a finished match.
+exactly simultaneous opposing flags draw. Every controller must vote to reset a finished match.
 
 Captures, transfers, drops, reserves, other piece movements, check, checkmate,
 promotion, castling, and en passant are outside Phase 1. See [spec.md](spec.md).
@@ -70,8 +88,9 @@ In a **second terminal**, independently serve the frontend:
 On macOS/Linux, create the environment with `python3 -m venv .venv`, and replace
 `.\.venv\Scripts\python.exe` with `.venv/bin/python` in the remaining commands.
 
-Open **http://localhost:8000**, not port 5000. Open four independently created tabs
-or browser profiles, enter names, and join different seats. Click your pawn and a
+Open **http://localhost:8000**, not port 5000. Choose 1-Player to test in one tab,
+2-Player to use two independent tabs/profiles, or 4-Player for four. Enter names and
+join different teams or seats as appropriate. Click your pawn and a
 highlighted destination to move. Additional browsers can spectate without joining.
 Do not open the HTML through a `file://` URL.
 
@@ -176,10 +195,12 @@ From the repository root:
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -t backend -v
 node --check frontend/assets/app.js
 node --check frontend/config.js
+node tests/frontend.test.cjs
 ```
 
 Tests cover pawn movement, blocked paths, independent turns, server clocks and
-increments, timeout ordering, reconnect ownership, rematches, malformed events,
+increments, timeout ordering, reconnect ownership, mode assignments and locking,
+solo clock pause/resume permissions, mode-aware rematches, malformed events,
 synchronized snapshots to four players and a spectator, allowed/rejected
 cross-origin handshakes, and the absence of frontend routes in Flask.
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bughouse · Four players. Two boards.</title>
+  <title>Bughouse · Two boards. One match.</title>
   <link rel="stylesheet" href="./assets/style.css">
   <script src="./assets/vendor/socket.io.min.js" defer></script>
   <script src="./config.js" defer></script>
@@ -11,13 +11,14 @@
 </head>
 <body>
   <main>
-    <header><div><p class="eyebrow">FOUR PLAYERS · TWO TEAMS · ONE MATCH</p><h1>Bughouse<span class="dot">.</span></h1></div><div class="connection"><span id="connection-dot"></span><span id="connection">Connecting…</span></div></header>
+    <header><div><p class="eyebrow">TWO BOARDS · THREE MODES · ONE MATCH</p><h1>Bughouse<span class="dot">.</span></h1></div><div class="connection"><span id="connection-dot"></span><span id="connection">Connecting…</span></div></header>
     <section class="match-bar"><div><span class="badge">PHASE 01</span><span class="time-control">3 + 2 <span>BLITZ</span></span></div><p id="match-status" role="status">Waiting for players</p></section>
     <section id="lobby" class="lobby">
-      <div><h2>Take your seat.</h2><p>Both boards start when all four players join.</p></div>
-      <form id="join-form"><label class="sr-only" for="name">Your name</label><input id="name" maxlength="24" placeholder="Your name" autocomplete="nickname"><label class="sr-only" for="seat">Choose a seat</label><select id="seat"><option value="">First available seat</option></select><button class="primary" id="join-button">Join match <span>↗</span></button></form>
+      <div><h2>Take your seat.</h2><p id="lobby-help">Choose a mode. The first player locks it for this match.</p></div>
+      <form id="join-form"><label class="sr-only" for="name">Your name</label><input id="name" maxlength="24" placeholder="Your name" autocomplete="nickname"><label class="sr-only" for="mode">Game mode</label><select id="mode"><option value="4">4-Player · Standard</option><option value="2">2-Player · Teams</option><option value="1">1-Player · Testing</option></select><label class="sr-only" for="seat">Choose a seat or team</label><select id="seat"><option value="">First available seat</option></select><button class="primary" id="join-button">Join match <span>↗</span></button></form>
     </section>
     <p id="identity" class="identity" hidden></p>
+    <div id="testing-controls" class="testing-controls" hidden><span>1-Player testing · Moves stay enabled while clocks are paused.</span><button id="clock-toggle" class="primary" type="button">Pause clocks</button></div>
     <div id="notice" role="status" aria-live="polite"></div>
     <section class="boards" aria-label="Live chessboards">
       <article class="board-card" id="card-a">
@@ -34,7 +35,7 @@
       </article>
     </section>
     <section class="footer-info"><p><span class="team team-1">TEAM 1</span> A White + B Black</p><p><span class="team team-2">TEAM 2</span> A Black + B White</p><button id="rematch" class="primary" hidden>Vote for rematch</button></section>
-    <footer><p><strong>The opening chapter.</strong> Select your pawn, then a highlighted square. One step forward, or two from home.</p><p>Pawn moves only · No captures, drops, or check rules yet · Clocks continue if a player disconnects</p></footer>
+    <footer><p><strong>The opening chapter.</strong> Select your pawn, then a highlighted square. One step forward, or two from home.</p><p>Pawn moves only · No captures, drops, or check rules yet · Disconnection does not pause clocks</p></footer>
   </main>
 </body>
 </html>
