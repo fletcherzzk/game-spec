@@ -51,6 +51,13 @@ E. Interface:
    4. Visual indicators showing whose turn it is on each board.
    5. Four visible chess clocks
 
+   Game Modes:
+   1-Player Mode: One player controls all four sides on both boards, mainly for testing. (testing only)
+   2-Player Mode: Each player controls one team (two sides on separate boards).
+   4-Player Mode: Each player controls one side, which is the standard multiplayer mode.
+   All three modes use the same game rules and backend logic.
+   Chess clocks can be paused in 1-Playerfor testing.
+
 F. Backend: (important)
    The game should support four players playing simultaneously from separate browsers.
    The backend should maintain the shared game state, including both chessboards, captured-piece reserves, player turns, and chess clocks.
@@ -79,6 +86,10 @@ Ignore the rules:
    1. Pieces cannot be placed on row ranks 1, 2, 7, or 8. 
    2. Placing a piece cannot directly put the opponent's king in check.
    3. Special Chess Moves: Castling, en passant
+
+If implementation difficulties are encountered, supporting only the 2-Player Mode for actual gameplay is acceptable. 
+
+
 
 
 
